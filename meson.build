@@ -17,7 +17,7 @@ librga_so = rga_lib_dir / 'librga.so'
 
 # Copy prebuilt .so to build dir for linking
 librga = shared_library('rga',
-    objects: [],
+    'dummy.c',
     install: true,
     soversion: '2',
     version: '2.1.0',

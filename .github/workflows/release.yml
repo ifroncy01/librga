@@ -31,17 +31,7 @@ jobs:
           cd -
 
           # Create pkg-config file
-          cat > pkg/usr/lib/aarch64-linux-gnu/pkgconfig/librga.pc << 'EOF'
-prefix=/usr
-libdir=${prefix}/lib/aarch64-linux-gnu
-includedir=${prefix}/include
-
-Name: librga
-Description: Userspace interface to Rockchip RGA 2D accelerator
-Version: 2.1.0
-Libs: -L${libdir} -lrga
-Cflags: -I${includedir}
-EOF
+          printf 'prefix=/usr\nlibdir=${prefix}/lib/aarch64-linux-gnu\nincludedir=${prefix}/include\n\nName: librga\nDescription: Userspace interface to Rockchip RGA 2D accelerator\nVersion: 2.1.0\nLibs: -L${libdir} -lrga\nCflags: -I${includedir}\n' > pkg/usr/lib/aarch64-linux-gnu/pkgconfig/librga.pc
 
           tar -czf librga-aarch64.tar.gz -C pkg .
           echo "Package created: $(du -h librga-aarch64.tar.gz | cut -f1)"

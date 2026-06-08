@@ -1,0 +1,59 @@
+name: Package librga
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+
+jobs:
+  package:
+    name: Package aarch64
+    runs-on: ubuntu-24.04-arm
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install meson
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq meson
+
+      - name: Package librga
+        run: |
+          meson setup build -Dprefix=/usr -Dlibdir=lib/aarch64-linux-gnu
+          DESTDIR=$(pwd)/pkg meson install -C build --no-rebuild
+
+          # Copy prebuilt .so
+          cp libs/Linux/gcc-aarch64/librga.so pkg/usr/lib/aarch64-linux-gnu/librga.so.2.1.0
+          cd pkg/usr/lib/aarch64-linux-gnu
+          ln -sf librga.so.2.1.0 librga.so.2
+          ln -sf librga.so.2 librga.so
+          cd -
+
+          # Copy pkg-config file
+          mkdir -p pkg/usr/lib/aarch64-linux-gnu/pkgconfig
+          cat > pkg/usr/lib/aarch64-linux-gnu/pkgconfig/librga.pc << 'EOF'
+prefix=/usr
+libdir=${prefix}/lib/aarch64-linux-gnu
+includedir=${prefix}/include
+
+Name: librga
+Description: Userspace interface to Rockchip RGA 2D accelerator
+Version: 2.1.0
+Libs: -L${libdir} -lrga
+Cflags: -I${includedir}
+EOF
+
+          tar -czf librga-aarch64.tar.gz -C pkg .
+          echo "Package created: $(du -h librga-aarch64.tar.gz | cut -f1)"
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: librga-aarch64
+          path: librga-aarch64.tar.gz
+          retention-days: 90
+
+      - name: Create Release
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: librga-aarch64.tar.gz
+          generate_release_notes: true

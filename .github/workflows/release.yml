@@ -8,32 +8,29 @@ on:
 
 permissions:
   contents: write
-  actions: read
 
 jobs:
   package:
     name: Package aarch64
-    runs-on: ubuntu-24.04-arm
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install meson
-        run: sudo apt-get update -qq && sudo apt-get install -y -qq meson
-
       - name: Package librga
         run: |
-          meson setup build -Dprefix=/usr -Dlibdir=lib/aarch64-linux-gnu
-          DESTDIR=$(pwd)/pkg meson install -C build --no-rebuild
+          mkdir -p pkg/usr/include/rga pkg/usr/lib/aarch64-linux-gnu/pkgconfig
 
-          # Copy prebuilt .so
+          # Copy headers
+          cp include/*.h pkg/usr/include/rga/
+
+          # Copy prebuilt library
           cp libs/Linux/gcc-aarch64/librga.so pkg/usr/lib/aarch64-linux-gnu/librga.so.2.1.0
           cd pkg/usr/lib/aarch64-linux-gnu
           ln -sf librga.so.2.1.0 librga.so.2
           ln -sf librga.so.2 librga.so
           cd -
 
-          # Copy pkg-config file
-          mkdir -p pkg/usr/lib/aarch64-linux-gnu/pkgconfig
+          # Create pkg-config file
           cat > pkg/usr/lib/aarch64-linux-gnu/pkgconfig/librga.pc << 'EOF'
 prefix=/usr
 libdir=${prefix}/lib/aarch64-linux-gnu
@@ -56,13 +53,13 @@ EOF
           path: librga-aarch64.tar.gz
           retention-days: 90
 
-      - name: Update Latest Release (push to master)
-        if: github.ref == 'refs/heads/master'
+      - name: Update Latest Release
+        if: github.ref == 'refs/heads/main'
         uses: ncipollo/release-action@v1
         with:
           tag: latest
           name: "Latest Build"
-          body: "Automated build from master branch. Commit: ${{ github.sha }}"
+          body: "Automated build from main branch. Commit: ${{ github.sha }}"
           artifacts: librga-aarch64.tar.gz
           allowUpdates: true
           prerelease: true
